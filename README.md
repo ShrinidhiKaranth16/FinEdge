@@ -1,23 +1,174 @@
+# FinEdge – Personal Finance & Expense Tracker API
+
+Build a RESTful API backend for a personal finance tracker using Node.js and Express,
+demonstrating asynchronous programming, modular architecture, and clean REST design.
+Users can create accounts, add income or expenses, view summaries, and generate
+monthly insights
+
+## Project Setup
+
+Add .env file in root folder and add PORT
+
+```
+PORT = 3000
+```
+
+## Install Dependencies
+
+```
+npm install
+```
+
+## Run Development Server
+
+Running the Server
+
+```
+npm run dev
+```
+
+## Verify with
+
+```
+http://localhost:5001/health
+
+Expected:
+{ "status": "ok", "timestamp": "..." }
+```
+
+## To run the test cases
+
+```
+npm run test
+```
+
+## What’s Ready Now
+
+- Server fully running
+- Health route
+- User registration API
+- transactions API
+- budgets API
+- Error-handling and validation
+- JSON persistence
+- Logging
+- Jest + Supertest test suite
+
 ## ✨ Features
 
-- CRUD for transactions
+- Logging Middleware Logs every request with:
+  - method
+  - URL
+  - status code
+  - response time
+- Input Validation Middleware
+  - Ensures request body data follow required rules.
+- Global Error Handler
+  - Standardized error response using a custom AppError class.
+- File-Based Persistence
+  - In-memory model (easy to replace with DB)
+  - Using fs/promises
+- Services Layer handles
+
+  - business login
+  - Validate data beyond simple “required” checks
+  - hashing passwords
+  - checking existing email
+  - generating uuids
+  - saving data
+
+- MVC Separation The project follows:
+
+  - routes
+  - controllers
+  - services
+  - models pattern.
+
+- CRUD for all routes
 - Clean layered architecture
-- Centralized custom error handling
 - Jest-based automated test cases
-- Validation inside controllers
-- In-memory model (easy to replace with DB)
 
 ## API Endpoints
 
 | Method |     Endpoint      |         Description          |
 | ------ | :---------------: | :--------------------------: |
+| POST   |      /users       |       create new user        |
 | GET    |   /transactions   |     get all transactions     |
 | GET    | /transactions/:id |   get a transaction by id    |
 | POST   |   /transactions   |      create transaction      |
 | PATCH  | /transactions/:id | update the transaction by id |
 | DELETE | /transactions/:id | delete the transaction by id |
 
-## Example Responses
+# /users
+
+## Route: POST /users
+
+Purpose: Register new users
+
+## Validation:
+
+- name: required
+- email: valid + unique
+- password: min. 6 chars
+
+## Behavior:
+
+- Passwords are hashed using bcryptjs
+- User is stored inside src/data/users.json
+- Duplicate emails return 409
+- Validation errors return 400
+
+## Example Response
+
+```
+POST /users
+
+Request Body
+{
+"name": "Sanath",
+"email": "sanath@example.com",
+"password": "secret123"
+}
+
+Response Body
+{
+"success" : "true",
+"data": {
+"id": "auto-generated",
+"name": "Sanath",
+"email": "sanath@example.com",
+"createdAt": "..."
+}
+}
+```
+
+## What is tested
+
+POST /users
+
+- Missing fields → 400
+- Invalid email → 400
+- Short password → 400
+- Successful user creation → 201
+- Duplicate email → 409
+
+# /transactions
+
+## Route: POST /transactions
+
+Purpose: create a transaction
+
+## Validation:
+
+- type: required & should be either "income"/"expense"
+- amount: required, should be not negative and less that zero
+- category : required
+
+## Behavior:
+
+- if any value missed returns 400
+
+## Example Response
 
 ```
 POST /transactions
@@ -25,7 +176,8 @@ POST /transactions
 Request Body
 {
   "type": "income",
-  "amount": 1000
+  "amount": 1000,
+  "category": "utilities",
 }
 
 Response Body
@@ -33,9 +185,16 @@ Response Body
   "id": "uuid",
   "type": "income",
   "amount": 1000,
+  "category": "utilities",
   "date": "2024-01-01T12:00:00Z"
 }
 ```
+
+## Route: GET /transactions
+
+Purpose: get all transactions
+
+## Example Response
 
 ```
 GET /transactions
@@ -79,6 +238,12 @@ Response Body
 
 ```
 
+## Route: GET /transactions/:id
+
+Purpose: get a transaction by id
+
+## Example Response
+
 ```
 GET /transactions/:id
 
@@ -98,6 +263,22 @@ Response Body
 }
 
 ```
+
+## Route: PATCH /transactions/:id
+
+Purpose: update a transaction by id
+
+## Validation:
+
+- type: required & should be either "income"/"expense"
+- amount: required, should be not negative and less that zero
+- category : required
+
+## Behavior:
+
+- checks if any one is available else throws error
+
+## Example Response
 
 ```
 PATCH /transactions/:id
@@ -125,19 +306,12 @@ Response Body
 
 ```
 
+## Route: DELETE /transactions/:id
+
+Purpose: delete a transaction by id
+
 ```
 DELETE /transactions/:id
-
-
-Response Body
-
-```
-
-```
-GET /news/search/:keyword
-
-Request Headers
-Authorization : Bearer {token}
 
 Response Body
 {

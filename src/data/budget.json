@@ -1,0 +1,20 @@
+[
+  {
+    "id": "51d8672b-cde8-4d5d-be1a-be3ab528b707",
+    "monthlyLimit": 95000,
+    "savingsTarget": 5000,
+    "createdAt": "2025-12-04T18:08:24.425Z"
+  },
+  {
+    "id": "bace9f1c-5d67-4562-9ea4-7263bc3d987c",
+    "monthlyLimit": 95000,
+    "savingsTarget": 5000,
+    "createdAt": "2025-12-04T18:36:40.281Z"
+  },
+  {
+    "id": "0979d39d-2d69-44cf-a226-254b28654a23",
+    "monthlyLimit": 95000,
+    "savingsTarget": 5000,
+    "createdAt": "2025-12-04T18:40:46.113Z"
+  }
+]

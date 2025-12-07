@@ -1,5 +1,30 @@
 const AppError = require("../utils/AppError");
 
+function isValidEmail(email) {
+  // simple regex; good enough for demo
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+const validateUser = (req, res, next) => {
+  const { name, email, password } = req.body || {};
+
+  if (!name || typeof name !== "string" || !name.trim()) {
+    return next(new AppError("Name is required", 400));
+  }
+  if (!email || !isValidEmail(email)) {
+    return next(new AppError("Valid email is required", 400));
+  }
+  if (!password || typeof password !== "string" || password.length < 6) {
+    return next(
+      new AppError(
+        "Password is required and must be at least 6 characters",
+        400
+      )
+    );
+  }
+  next();
+};
+
 function validateTransactionBody(requireAllFields = true) {
   return (req, res, next) => {
     const { type, category, amount } = req.body || {};
@@ -94,6 +119,30 @@ function validateTransactionBody(requireAllFields = true) {
   };
 }
 
+const validateBudget = (req, res, next) => {
+  const { monthlyLimit, savingsTarget } = req.body;
+
+  if (req.method === "POST") {
+    if (monthlyLimit === undefined || savingsTarget === undefined) {
+      return res.status(400).json({
+        message: "monthlyLimit and savingsTarget are required",
+      });
+    }
+  }
+
+  if (monthlyLimit !== undefined && typeof monthlyLimit !== "number") {
+    return res.status(400).json({ message: "monthlyLimit must be a number" });
+  }
+
+  if (savingsTarget !== undefined && typeof savingsTarget !== "number") {
+    return res.status(400).json({ message: "savingsTarget must be a number" });
+  }
+
+  next();
+};
+
 module.exports = {
   validateTransactionBody,
+  validateUser,
+  validateBudget,
 };
