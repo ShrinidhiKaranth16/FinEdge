@@ -1,11 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const transactionController = require("../controllers/transactionController");
 
-router.post("/", transactionController.create);
+const transactionController = require("../controllers/transactionController");
+const { validateTransactionBody } = require("../middleware/validator");
+
+router.post("/", validateTransactionBody(true), transactionController.create);
 router.get("/", transactionController.getAll);
 router.get("/:id", transactionController.getById);
-router.patch("/:id", transactionController.update);
+router.patch(
+  "/:id",
+  validateTransactionBody(false),
+  transactionController.update
+);
 router.delete("/:id", transactionController.delete);
 
 module.exports = router;

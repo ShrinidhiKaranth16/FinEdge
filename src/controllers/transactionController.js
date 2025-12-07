@@ -1,60 +1,40 @@
 const transactionService = require("../services/transactionService");
+const asyncWrapper = require("../middleware/asyncWrapper");
+const AppError = require("../utils/AppError");
 
 class TransactionController {
-  create = async (req, res) => {
-    try {
-      const transaction = await transactionService.createTransaction(req.body);
-      res.status(201).json(transaction);
-    } catch (error) {
-      if (error.errors) return res.status(400).json({ errors: error.errors });
-      res.status(400).json({ error: error.message });
-    }
-  };
+  create = asyncWrapper(async (req, res, next) => {
+    const transaction = await transactionService.createTransaction(req.body);
+    return res.status(201).json({ success: true, data: transaction });
+  });
 
-  getAll = async (req, res) => {
-    const transactions = await transactionService.getAllTransactions();
-    console.log(transactions);
-    res.json(transactions);
-  };
+  getAll = asyncWrapper(async (req, res, next) => {
+    const txns = await transactionService.getAllTransactions();
+    return res
+      .status(200)
+      .json({ success: true, count: txns.length, data: txns });
+  });
 
-  getById = async (req, res) => {
-    const transaction = await transactionService.getTransactionById(
-      req.params.id
-    );
-    if (!transaction)
-      return res.status(404).json({ error: "Transaction not found" });
-    res.json(transaction);
-  };
+  getById = asyncWrapper(async (req, res, next) => {
+    const { id } = req.params;
+    const txn = await transactionService.getTransactionById(id);
+    if (!txn) throw new AppError("Transaction not found", 404);
+    return res.status(200).json({ success: true, data: txn });
+  });
 
-  update = async (req, res) => {
-    try {
-      const updated = await transactionService.updateTransaction(
-        req.params.id,
-        req.body
-      );
-      res.json(updated);
-    } catch (error) {
-      res.status(404).json({ error: error.message });
-    }
-  };
+  update = asyncWrapper(async (req, res, next) => {
+    const { id } = req.params;
+    const updated = await transactionService.updateTransaction(id, req.body);
+    return res.status(200).json({ success: true, data: updated });
+  });
 
-  delete = async (req, res) => {
-    try {
-      const deleted = await transactionService.deleteTransaction(req.params.id);
-      res.json(deleted);
-    } catch (error) {
-      res.status(404).json({ error: error.message });
-    }
-  };
-
-  getTotalBalance = async (req, res) => {
-    try {
-      const balance = await transactionService.getTotalBalance();
-      res.json({ balance });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  };
+  delete = asyncWrapper(async (req, res, next) => {
+    const { id } = req.params;
+    await transactionService.deleteTransaction(id);
+    return res
+      .status(200)
+      .json({ success: true, message: "Transaction deleted successfully" });
+  });
 }
 
 module.exports = new TransactionController();

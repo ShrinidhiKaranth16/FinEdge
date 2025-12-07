@@ -1,26 +1,30 @@
+// middleware/globalErrorHandler.js
 const AppError = require("../utils/AppError");
 
-function errorHandler(err, req, res, next) {
-  if (!err) return next();
+const sendError = (err, res) => {
+  const statusCode = err.statusCode || 500;
 
-  // Zod validation error → 400
-  if (err?.errors) {
-    return res.status(400).json({
-      status: "fail",
-      errors: err.errors,
+  if (err.isOperational) {
+    return res.status(statusCode).json({
+      success: false,
+      message: err.message,
     });
   }
 
-  // ensure standard format
-  if (!(err instanceof AppError)) {
-    console.error("Unexpected error: ", err);
-    err = new AppError("Internal Server Error", 500);
-  }
-
-  res.status(err.statusCode || 500).json({
-    status: "error",
-    message: err.message || "Something went wrong",
+  console.error("UNEXPECTED ERROR:", err);
+  return res.status(500).json({
+    success: false,
+    message: "Something went wrong.",
   });
-}
+};
 
-module.exports = errorHandler;
+module.exports = (err, req, res, next) => {
+  if (!(err instanceof AppError)) {
+    err = new AppError(
+      err.message || "Internal Server Error",
+      err.statusCode || 500,
+      false
+    );
+  }
+  sendError(err, res);
+};
