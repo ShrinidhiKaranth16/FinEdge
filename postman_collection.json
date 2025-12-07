@@ -1,0 +1,150 @@
+{
+	"info": {
+		"_postman_id": "5b75c65b-239a-47bb-93c3-414385bf38f6",
+		"name": "FinEdge",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34307944"
+	},
+	"item": [
+		{
+			"name": "transactions",
+			"item": [
+				{
+					"name": "getAllTransactions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n      \"id\": \"a6bb49f5-e478-483d-9583-77a1880d7e62\",\n      \"type\": \"expense\",\n      \"category\": \"shopping\",\n      \"amount\": 4170.62,\n      \"date\": \"2024-04-19\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{http://localhost:3000/}}/api/v1/transactions/",
+							"host": [
+								"{{http://localhost:3000/}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "getTransactionById",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{http://localhost:3000/}}/api/v1/transactions/4e51468f-2798-4b8d-a4a3-01bff9fc59f5",
+							"host": [
+								"{{http://localhost:3000/}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								"4e51468f-2798-4b8d-a4a3-01bff9fc59f5"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "createTransaction",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"expense\",\n    \"category\": \"Entertainment\",\n    \"amount\": 1000\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{http://localhost:3000/}}/api/v1/transactions/",
+							"host": [
+								"{{http://localhost:3000/}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "deleteTransactionById",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{http://localhost:3000/}}/api/v1/transactions/65d865c6-af1d-4cc4-a9ea-5d818be7a3b0",
+							"host": [
+								"{{http://localhost:3000/}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"transactions",
+								"65d865c6-af1d-4cc4-a9ea-5d818be7a3b0"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "updateTransactionByid",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": -19\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{http://localhost:3000/}}/transactions/65d865c6-af1d-4cc4-a9ea-5d818be7a3b0",
+							"host": [
+								"{{http://localhost:3000/}}"
+							],
+							"path": [
+								"transactions",
+								"65d865c6-af1d-4cc4-a9ea-5d818be7a3b0"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "http://localhost:3000/",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
