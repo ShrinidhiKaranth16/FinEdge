@@ -37,12 +37,14 @@ describe("Transaction Service", () => {
       type: "income",
       category: "salary",
       amount: 5000,
+      userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
     });
 
     expect(t).toHaveProperty("id");
     expect(t.type).toBe("income");
     expect(t.category).toBe("salary");
     expect(t.amount).toBe(5000);
+    expect(t).toHaveProperty("userId");
   });
 
   test("should get all transactions", async () => {
@@ -50,9 +52,12 @@ describe("Transaction Service", () => {
       type: "income",
       category: "salary",
       amount: 1000,
+      userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
     });
 
-    const list = await transactionService.getAllTransactions();
+    const list = await transactionService.getAllTransactions(
+      "66e5805d-1a66-4b17-9c72-df667fe39a18"
+    );
     expect(list.length).toBe(1);
   });
 
@@ -61,9 +66,13 @@ describe("Transaction Service", () => {
       type: "expense",
       category: "food",
       amount: 200,
+      userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
     });
 
-    const found = await transactionService.getTransactionById(t.id);
+    const found = await transactionService.getTransactionById(
+      "66e5805d-1a66-4b17-9c72-df667fe39a18",
+      t.id
+    );
     expect(found).toEqual(t);
   });
 
@@ -72,12 +81,17 @@ describe("Transaction Service", () => {
       type: "expense",
       category: "food",
       amount: 100,
+      userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
     });
 
-    const updated = await transactionService.updateTransaction(t.id, {
-      amount: 250,
-      category: "dining",
-    });
+    const updated = await transactionService.updateTransaction(
+      "66e5805d-1a66-4b17-9c72-df667fe39a18",
+      t.id,
+      {
+        amount: 250,
+        category: "dining",
+      }
+    );
 
     expect(updated.amount).toBe(250);
     expect(updated.category).toBe("dining");
@@ -89,12 +103,18 @@ describe("Transaction Service", () => {
       type: "income",
       category: "freelance",
       amount: 400,
+      userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
     });
 
-    const removed = await transactionService.deleteTransaction(t.id);
+    const removed = await transactionService.deleteTransaction(
+      "66e5805d-1a66-4b17-9c72-df667fe39a18",
+      t.id
+    );
     expect(removed.id).toBe(t.id);
 
-    const list = await transactionService.getAllTransactions();
+    const list = await transactionService.getAllTransactions(
+      "66e5805d-1a66-4b17-9c72-df667fe39a18"
+    );
     expect(list.length).toBe(0);
   });
 
@@ -104,6 +124,7 @@ describe("Transaction Service", () => {
         type: "wrong",
         category: "salary",
         amount: 200,
+        userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
       })
     ).rejects.toThrow(AppError);
   });
@@ -114,30 +135,58 @@ describe("Transaction Service", () => {
         type: "income",
         category: "salary",
         amount: -20,
+        userId: "66e5805d-1a66-4b17-9c72-df667fe39a18",
       })
     ).rejects.toThrow(AppError);
   });
 
   test("should throw 404 when updating non-existing", async () => {
     await expect(
-      transactionService.updateTransaction("fake-id", { amount: 200 })
+      transactionService.updateTransaction(
+        "66e5805d-1a66-4b17-9c72-df667fe39a18",
+        "fake-id",
+        { amount: 200 }
+      )
     ).rejects.toThrow(AppError);
   });
 
   test("should throw 404 when deleting non-existing", async () => {
-    await expect(transactionService.deleteTransaction("fake")).rejects.toThrow(
-      AppError
-    );
+    await expect(
+      transactionService.deleteTransaction(
+        "66e5805d-1a66-4b17-9c72-df667fe39a18",
+        "fake"
+      )
+    ).rejects.toThrow(AppError);
   });
+});
+
+let token;
+
+beforeAll(async () => {
+  const user = await request(app).post("/users/register").send({
+    name: "tester",
+    email: "test@example.com",
+    password: "password123",
+  });
+
+  const login = await request(app).post("/users/login").send({
+    email: "test@example.com",
+    password: "password123",
+  });
+
+  token = login.body.token; // assuming your login returns token
 });
 
 describe("Transaction Routes", () => {
   test("POST /transactions → should create a transaction", async () => {
-    const res = await request(app).post("/transactions").send({
-      type: "income",
-      category: "salary",
-      amount: 2000,
-    });
+    const res = await request(app)
+      .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        type: "income",
+        category: "salary",
+        amount: 2000,
+      });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -145,21 +194,27 @@ describe("Transaction Routes", () => {
   });
 
   test("POST /transactions → should fail when type missing", async () => {
-    const res = await request(app).post("/transactions").send({
-      category: "food",
-      amount: 100,
-    });
+    const res = await request(app)
+      .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        category: "food",
+        amount: 100,
+      });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/type/i);
   });
 
   test("POST /transactions → invalid amount", async () => {
-    const res = await request(app).post("/transactions").send({
-      type: "expense",
-      category: "food",
-      amount: -5,
-    });
+    const res = await request(app)
+      .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        type: "expense",
+        category: "food",
+        amount: -5,
+      });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toMatch(/greater than zero/i);
@@ -168,6 +223,7 @@ describe("Transaction Routes", () => {
   test("GET /transactions → should list all", async () => {
     await request(app)
       .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
       .send({ type: "income", category: "job", amount: 300 });
 
     const res = await request(app).get("/transactions");
@@ -179,6 +235,7 @@ describe("Transaction Routes", () => {
   test("GET /transactions/:id → should return a transaction", async () => {
     const created = await request(app)
       .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
       .send({ type: "income", category: "work", amount: 500 });
 
     const id = created.body.data.id;
@@ -190,7 +247,9 @@ describe("Transaction Routes", () => {
   });
 
   test("GET /transactions/:id → should return 404 for missing id", async () => {
-    const res = await request(app).get("/transactions/invalid-id");
+    const res = await request(app)
+      .get("/transactions/invalid-id")
+      .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(404);
     expect(res.body.message).toMatch(/not found/i);
@@ -199,6 +258,7 @@ describe("Transaction Routes", () => {
   test("PATCH /transactions/:id → should update", async () => {
     const created = await request(app)
       .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
       .send({ type: "expense", category: "food", amount: 100 });
 
     const id = created.body.data.id;
@@ -216,6 +276,7 @@ describe("Transaction Routes", () => {
   test("PATCH /transactions/:id → invalid amount", async () => {
     const created = await request(app)
       .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
       .send({ type: "income", category: "salary", amount: 500 });
 
     const id = created.body.data.id;
@@ -231,6 +292,7 @@ describe("Transaction Routes", () => {
   test("DELETE /transactions/:id → should delete", async () => {
     const created = await request(app)
       .post("/transactions")
+      .set("Authorization", `Bearer ${token}`)
       .send({ type: "income", category: "freelance", amount: 400 });
 
     const id = created.body.data.id;
@@ -242,7 +304,9 @@ describe("Transaction Routes", () => {
   });
 
   test("DELETE /transactions/:id → 404 not found", async () => {
-    const res = await request(app).delete("/transactions/nope");
+    const res = await request(app)
+      .delete("/transactions/nope")
+      .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(404);
     expect(res.body.message).toMatch(/not found/i);

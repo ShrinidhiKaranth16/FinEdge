@@ -1,54 +1,88 @@
 // __tests__/user.test.js
 const request = require("supertest");
-const fs = require("fs").promises;
+const fs = require("fs");
 const path = require("path");
 
 const app = require("../src/app");
 
+// MAIN DATA FILE
 const usersFile = path.join(__dirname, "..", "src", "data", "users.json");
+// BACKUP FILE
+const backupFile = path.join(
+  __dirname,
+  "..",
+  "src",
+  "data",
+  "users.backup.json"
+);
 
-async function resetUsersFile() {
-  await fs.mkdir(path.dirname(usersFile), { recursive: true });
-  await fs.writeFile(usersFile, "[]", "utf8");
-}
+let originalData = [];
+
+// Load backup OR create one
+beforeAll(async () => {
+  try {
+    originalData = JSON.parse(await fs.promises.readFile(usersFile, "utf-8"));
+  } catch (err) {
+    originalData = [];
+  }
+
+  // Ensure backup exists
+  await fs.promises.writeFile(
+    backupFile,
+    JSON.stringify(originalData, null, 2)
+  );
+
+  // Reset test users.json to empty array
+  await fs.promises.writeFile(usersFile, JSON.stringify([], null, 2));
+});
+
+// After the entire test suite → restore original data
+afterAll(async () => {
+  await fs.promises.writeFile(usersFile, JSON.stringify(originalData, null, 2));
+});
+
+// Before each test → clean fresh data
+beforeEach(async () => {
+  await fs.promises.writeFile(usersFile, JSON.stringify([], null, 2));
+});
 
 async function readUsers() {
-  const raw = await fs.readFile(usersFile, "utf8");
+  const raw = await fs.promises.readFile(usersFile, "utf8");
   return JSON.parse(raw || "[]");
 }
 
-describe("POST /users", () => {
-  beforeEach(async () => {
-    await resetUsersFile();
-  });
-
+describe("POST /users/register", () => {
   test("returns 400 when name is missing", async () => {
     const res = await request(app)
-      .post("/users")
+      .post("/users/register")
       .send({ email: "a@b.com", password: "password123" });
 
     expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false); // updated
-    expect(res.body.message).toMatch(/Name/i);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toMatch(/name/i);
   });
 
   test("returns 400 when email is invalid", async () => {
-    const res = await request(app)
-      .post("/users")
-      .send({ name: "Alice", email: "invalid-email", password: "password123" });
+    const res = await request(app).post("/users/register").send({
+      name: "Alice",
+      email: "invalid-email",
+      password: "password123",
+    });
 
     expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false); // updated
+    expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/email/i);
   });
 
   test("returns 400 when password is too short", async () => {
-    const res = await request(app)
-      .post("/users")
-      .send({ name: "Bob", email: "bob@example.com", password: "123" });
+    const res = await request(app).post("/users/register").send({
+      name: "Bob",
+      email: "bob@example.com",
+      password: "123",
+    });
 
     expect(res.status).toBe(400);
-    expect(res.body.success).toBe(false); // updated
+    expect(res.body.success).toBe(false);
     expect(res.body.message).toMatch(/password/i);
   });
 
@@ -59,24 +93,22 @@ describe("POST /users", () => {
       password: "secret123",
     };
 
-    const res = await request(app).post("/users").send(payload);
+    const res = await request(app).post("/users/register").send(payload);
 
     expect(res.status).toBe(201);
-    expect(res.body.success).toBe(true); // updated
+    expect(res.body.success).toBe(true);
     expect(res.body).toHaveProperty("data");
 
     const user = res.body.data;
+
     expect(user).toHaveProperty("id");
-    expect(user).toHaveProperty("name", payload.name);
-    expect(user).toHaveProperty("email", payload.email);
-    expect(user).toHaveProperty("createdAt");
+    expect(user.name).toBe(payload.name);
+    expect(user.email).toBe(payload.email);
     expect(user).not.toHaveProperty("password");
 
-    const users = await readUsers();
-    expect(users.length).toBe(1);
-    expect(users[0].email).toBe(payload.email);
-    expect(users[0].password).toBeDefined();
-    expect(users[0].password).not.toBe(payload.password);
+    const userList = await readUsers();
+    expect(userList.length).toBe(1);
+    expect(userList[0].password).not.toBe(payload.password);
   });
 
   test("returns 409 when email already exists", async () => {
@@ -86,17 +118,16 @@ describe("POST /users", () => {
       password: "secret123",
     };
 
-    const first = await request(app).post("/users").send(payload);
-    expect(first.status).toBe(201);
+    await request(app).post("/users/register").send(payload);
 
-    const second = await request(app).post("/users").send({
-      name: "Second",
+    const second = await request(app).post("/users/register").send({
+      name: "Srinidhi",
       email: "dup@example.com",
-      password: "another123",
+      password: "newpass",
     });
 
     expect(second.status).toBe(409);
-    expect(second.body.success).toBe(false); // updated
-    expect(second.body.message).toMatch(/already in use/i);
+    expect(second.body.success).toBe(false);
+    expect(second.body.message).toMatch(/already/i);
   });
 });

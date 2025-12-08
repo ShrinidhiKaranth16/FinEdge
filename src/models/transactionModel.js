@@ -1,4 +1,3 @@
-// models/transactionModel.js
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -22,8 +21,7 @@ class TransactionModel {
   async _readFile() {
     try {
       const raw = await fs.promises.readFile(this.filePath, "utf8");
-      console.log(raw);
-      return JSON.parse(raw);
+      return JSON.parse(raw || "[]");
     } catch (err) {
       throw new AppError("Failed to read transactions storage", 500);
     }
@@ -41,56 +39,62 @@ class TransactionModel {
     }
   }
 
-  async create({ type, category, amount, date }) {
-    const txns = await this._readFile();
-    const now = new Date();
+  // Create transaction: adds to full array
+  async create({ type, category, amount, userId }) {
+    const all = await this._readFile();
 
     const newTxn = {
       id: crypto.randomUUID(),
       type,
       category,
       amount: Number(amount),
-      date: date ? new Date(date).toISOString() : now.toISOString(),
-      createdAt: now.toISOString(),
+      date: new Date().toISOString(),
+      userId,
+      createdAt: new Date().toISOString(),
     };
 
-    txns.push(newTxn);
-    await this._writeFile(txns);
+    all.push(newTxn);
+    await this._writeFile(all);
     return newTxn;
   }
 
-  async findAll() {
-    return this._readFile();
+  // Return all transactions for a user
+  async findAll(userId) {
+    const all = await this._readFile();
+    return all.filter((txn) => txn.userId === userId);
   }
 
-  async findById(id) {
-    const txns = await this._readFile();
-    return txns.find((t) => t.id === id) || null;
+  // Find a single transaction by userId and id
+  async findById(userId, id) {
+    const all = await this._readFile();
+    return all.find((t) => t.id === id && t.userId === userId) || null;
   }
 
-  async update(id, data) {
-    const txns = await this._readFile();
-    const idx = txns.findIndex((t) => t.id === id);
+  // Update a transaction: must update full array and persist
+  async update(userId, id, data) {
+    const all = await this._readFile();
+    const idx = all.findIndex((t) => t.id === id && t.userId === userId);
     if (idx === -1) return null;
 
     const updated = {
-      ...txns[idx],
+      ...all[idx],
       ...data,
       updatedAt: new Date().toISOString(),
     };
 
-    txns[idx] = updated;
-    await this._writeFile(txns);
+    all[idx] = updated;
+    await this._writeFile(all);
     return updated;
   }
 
-  async delete(id) {
-    const txns = await this._readFile();
-    const idx = txns.findIndex((t) => t.id === id);
+  // Delete a transaction and return removed
+  async delete(userId, id) {
+    const all = await this._readFile();
+    const idx = all.findIndex((t) => t.id === id && t.userId === userId);
     if (idx === -1) return null;
 
-    const removed = txns.splice(idx, 1)[0];
-    await this._writeFile(txns);
+    const [removed] = all.splice(idx, 1);
+    await this._writeFile(all);
     return removed;
   }
 }

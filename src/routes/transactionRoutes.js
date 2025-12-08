@@ -3,6 +3,9 @@ const router = express.Router();
 
 const transactionController = require("../controllers/transactionController");
 const { validateTransactionBody } = require("../middleware/validator");
+const protect = require("../middleware/protect");
+
+router.use(protect);
 
 router.post("/", validateTransactionBody(true), transactionController.create);
 router.get("/", transactionController.getAll);

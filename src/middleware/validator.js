@@ -72,10 +72,17 @@ function validateTransactionBody(requireAllFields = true) {
       req.body.amount = num;
       req.body.type = String(type).toLowerCase();
       req.body.category = String(category).trim();
+
+      // set userId from req.user
+      if (!req.user || !req.user.id) {
+        return next(new AppError("Not authenticated", 401));
+      }
+      req.body.userId = req.user.id;
+
       return next();
     }
 
-    // For update
+    // For update: require at least one field
     if (!hasField("type") && !hasField("category") && !hasField("amount")) {
       return next(
         new AppError(

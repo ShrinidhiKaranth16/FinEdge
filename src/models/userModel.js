@@ -1,5 +1,6 @@
 const fs = require("fs").promises;
 const path = require("path");
+const crypto = require("crypto");
 
 const usersFile = path.join(__dirname, "..", "data", "users.json");
 
@@ -23,16 +24,17 @@ async function writeAll(users) {
 }
 
 function generateId() {
-  // simple id generator, replace with uuid later if needed
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return crypto.randomUUID();
 }
 
 async function findByEmail(email) {
   const users = await readAll();
-  return (
-    users.find((u) => u.email.toLowerCase() === String(email).toLowerCase()) ||
-    null
-  );
+
+  const user = users.find((u) => {
+    return u.email.toLowerCase() === String(email).toLowerCase();
+  });
+
+  return user;
 }
 
 async function saveUser(user) {

@@ -27,6 +27,12 @@ async function createUser({ name, email, password }) {
   return safe;
 }
 
+const findUserByEmail = async (email) => {
+  const existing = await userModel.findByEmail(email);
+  return existing;
+};
+
 module.exports = {
   createUser,
+  findUserByEmail,
 };

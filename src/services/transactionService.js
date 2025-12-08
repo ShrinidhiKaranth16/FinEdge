@@ -1,4 +1,3 @@
-// services/transactionService.js
 const TransactionModel = require("../models/transactionModel");
 const AppError = require("../utils/AppError");
 
@@ -10,13 +9,13 @@ class TransactionService {
     this.model = modelInstance || new TransactionModel();
   }
 
+  // data is expected to include userId (for create)
   async createTransaction(data) {
-    // business validation
     if (!data || typeof data !== "object") {
       throw new AppError("Invalid payload", 400);
     }
 
-    const type = String(data.type).toLowerCase();
+    const type = String(data.type || "").toLowerCase();
     if (!validTypes.includes(type)) {
       throw new AppError("Invalid transaction type", 400);
     }
@@ -26,26 +25,34 @@ class TransactionService {
       throw new AppError("Amount must be a positive number", 400);
     }
 
+    if (!data.userId) {
+      throw new AppError("userId is required", 400);
+    }
+
     const payload = {
       type,
-      category: String(data.category).trim(),
+      category: String(data.category || "").trim(),
       amount,
-      date: data.date, // optional
+      userId: data.userId,
     };
 
     return this.model.create(payload);
   }
 
-  async getAllTransactions() {
-    return this.model.findAll();
+  // userId required
+  async getAllTransactions(userId) {
+    if (!userId) throw new AppError("userId is required", 400);
+    return this.model.findAll(userId);
   }
 
-  async getTransactionById(id) {
+  async getTransactionById(userId, id) {
+    if (!userId) throw new AppError("userId is required", 400);
     if (!id) throw new AppError("id is required", 400);
-    return this.model.findById(id);
+    return this.model.findById(userId, id);
   }
 
-  async updateTransaction(id, data) {
+  async updateTransaction(userId, id, data) {
+    if (!userId) throw new AppError("userId is required", 400);
     if (!id) throw new AppError("id is required", 400);
     if (!data || typeof data !== "object")
       throw new AppError("Invalid payload", 400);
@@ -62,26 +69,25 @@ class TransactionService {
       data.amount = num;
     }
 
-    const existing = await this.model.findById(id);
+    const existing = await this.model.findById(userId, id);
     if (!existing) {
       throw new AppError(`Transaction with ID ${id} not found`, 404);
     }
 
-    return this.model.update(id, data);
+    return this.model.update(userId, id, data);
   }
 
-  async deleteTransaction(id) {
+  async deleteTransaction(userId, id) {
+    if (!userId) throw new AppError("userId is required", 400);
     if (!id) throw new AppError("id is required", 400);
-    const existing = await this.model.findById(id);
+
+    const existing = await this.model.findById(userId, id);
     if (!existing) {
       throw new AppError(`Transaction with ID ${id} not found`, 404);
     }
-    return this.model.delete(id);
+
+    return this.model.delete(userId, id);
   }
 }
 
-// default singleton
-const defaultService = new TransactionService();
-module.exports = defaultService;
-// also export class for tests / DI
-module.exports.TransactionService = TransactionService;
+module.exports = new TransactionService();

@@ -9,11 +9,15 @@ const transactionRoutes = require("./routes/transactionRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
 
 const logger = require("./middleware/logger");
+const { apiLimiter } = require("./middleware/rateLimiter");
 const errorHandler = require("./middleware/errorHandler");
 
 app.use(cors());
 app.use(express.json());
 app.use(logger);
+
+// Apply global rate-limiter to all API routes
+app.use("/", apiLimiter);
 
 // health route
 app.get("/health", (req, res) => {

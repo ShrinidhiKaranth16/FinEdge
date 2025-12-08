@@ -5,8 +5,9 @@ const {
   deleteBudget,
 } = require("../services/budgetService");
 const AppError = require("../utils/AppError");
+const asyncWrapper = require("../middleware/asyncWrapper");
 
-const fetchBudgetsController = async (req, res, next) => {
+const fetchBudgetsController = asyncWrapper(async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -24,25 +25,25 @@ const fetchBudgetsController = async (req, res, next) => {
     console.error(err);
     next(err);
   }
-};
+});
 
-const createBudgetController = async (req, res) => {
+const createBudgetController = asyncWrapper(async (req, res) => {
   const { monthlyLimit, savingsTarget } = req.body;
 
   const budget = await createBudget(monthlyLimit, savingsTarget);
   return res.status(201).json({ success: true, data: budget });
-};
+});
 
-const updateBudgetController = async (req, res, next) => {
+const updateBudgetController = asyncWrapper(async (req, res, next) => {
   const { id } = req.params;
   const { monthlyLimit, savingsTarget } = req.body;
 
   const budget = await updateBudget(id, monthlyLimit, savingsTarget);
   if (!budget) throw new AppError("Budget not found", 404);
   return res.status(200).json(budget);
-};
+});
 
-const deleteBudgetController = async (req, res, next) => {
+const deleteBudgetController = asyncWrapper(async (req, res, next) => {
   try {
     const { id } = req.params;
     const deleted = await deleteBudget(id);
@@ -56,7 +57,7 @@ const deleteBudgetController = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+});
 
 module.exports = {
   fetchBudgetsController,

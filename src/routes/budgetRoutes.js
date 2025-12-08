@@ -7,6 +7,9 @@ const {
   deleteBudgetController,
 } = require("../controllers/budgetController");
 const { validateBudget } = require("../middleware/validator");
+const protect = require("../middleware/protect");
+
+router.use(protect);
 
 router
   .route("/")
